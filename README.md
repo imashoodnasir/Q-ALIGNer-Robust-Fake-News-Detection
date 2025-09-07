@@ -1,63 +1,84 @@
-# Q-ALIGNer (Minimal Working Implementation)
+# Q-ALIGNer: Quantum Entanglement-Driven Multimodal Fake News Detection
 
-This repo provides a **working, minimal** implementation of the paper's core ideas:
-- Classical encoders for **text** (DistilBERT) and **image** (ResNet18)
-- Projection to a **shared latent space**
-- A **quantum entanglement** layer (PennyLane) for fusion
-- Multi-term objective with **Cross-Entropy + InfoNCE + Swap + Bures (proxy) + optional robustness**
-- Evaluation with **accuracy** and **ECE**
+This repository provides a minimal working implementation of the **Q-ALIGNer** framework, 
+a quantum-inspired multimodal architecture for robust fake news detection. 
+It integrates **classical feature extraction**, **quantum state encoding**, 
+**learnable entanglement fusion**, **contrastive alignment**, and **robustness-aware training**.
 
-> If you don't have the datasets ready, the loaders automatically fall back to a **small synthetic dataset** so you can run and verify end-to-end training.
+---
 
-## File Structure
+## 📂 File Structure
 ```
 qaligner/
-  __init__.py
-  config.py                # hyperparameters & paths
-  datasets.py              # dataset + dataloaders (CSV expected; synthetic fallback)
-  losses.py                # losses including InfoNCE, swap, Bures (proxy), ECE
-  adversarial.py           # simple FGSM for images
-  models/
-    encoders.py            # TextEncoder (HF) + ImageEncoder (ResNet18)
-    quantum_layer.py       # PennyLane circuit (angle encoding + entanglement)
-    qaligner.py            # Full model wiring + heads
-main_train.py              # training script
-requirements.txt
+  ├── config.py              # Configuration (paths, hyperparameters)
+  ├── datasets.py            # Dataset loader (CSV + image/text preprocessing)
+  ├── losses.py              # CE, InfoNCE, Swap, Bures (proxy), calibration
+  ├── adversarial.py         # FGSM adversarial image attack
+  ├── train.py               # Training and evaluation loops
+  ├── models/
+  │     ├── encoders.py      # TextEncoder (BERT) + ImageEncoder (ResNet18)
+  │     ├── quantum_layer.py # PennyLane quantum entanglement layer
+  │     └── qaligner.py      # Full Q-ALIGNer architecture
+main_train.py                 # Training script
+requirements.txt              # Dependencies
+README.md                     # Documentation
 ```
 
-## Install
+---
+
+## ⚙️ Installation
 ```bash
 python -m venv .venv
-source .venv/bin/activate   # (Windows: .venv\Scripts\activate)
+source .venv/bin/activate   # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-> If you cannot download pretrained weights (air-gapped), the code still runs with **randomly initialized** encoders.
+---
 
-## Data Format
-Provide CSV files for train/val/test with columns: `text,image_path,label`.
-Set paths in `qaligner/config.py`. Example:
+## 📊 Data Format
+The model expects CSV files with the following structure:
 ```
-data/train.csv
-data/val.csv
-data/test.csv
-data/images/...
+text,image_path,label
+"Some news headline","img1.jpg",1
+"Another article","img2.jpg",0
 ```
-If files are **missing**, a tiny synthetic dataset is auto-generated in `data/images/` so the code runs.
+- `text`: textual claim or article excerpt
+- `image_path`: relative path to the associated image
+- `label`: 0 (real) or 1 (fake)
 
-## Run
+Images should be placed in the folder defined by `Config.image_root` in `config.py`.
+
+⚠️ If no dataset is provided, the code automatically generates a **synthetic toy dataset** so the pipeline can be tested.
+
+---
+
+## 🚀 Running Training
 ```bash
 python main_train.py
 ```
-- Best checkpoint saved to `checkpoints/qaligner_best.pt`
-- Prints validation metrics each epoch and final test metrics.
+- Trains Q-ALIGNer on the dataset (or synthetic fallback)
+- Saves best checkpoint to `checkpoints/qaligner_best.pt`
+- Prints validation metrics per epoch and test metrics at the end
 
-## Notes
-- Quantum layer keeps **num_qubits** small (default 6) for speed.
-- `Config.use_quantum=False` turns Q-ALIGNer into a classical multimodal baseline (still trains).
-- Robustness training uses **image FGSM** as a simple example (set `lambda_robust` and `adv_eps` in config).
+---
 
-## Reproducibility Tips
-- Set `device="cpu"` in `config.py` if you don't have a GPU.
-- Adjust `batch_size`, `epochs` for your hardware.
-- When using real datasets, consider increasing `proj_dim`, `epochs`, and enabling PGD steps.
+## 🧩 Features
+- **Text Encoder**: DistilBERT (transformer-based)
+- **Image Encoder**: ResNet18 (lightweight CNN)
+- **Quantum Fusion**: PennyLane variational quantum circuit with entangling gates
+- **Composite Loss**: CE + InfoNCE + Swap + Bures (proxy) + Robustness
+- **Adversarial Training**: Simple FGSM perturbations for images
+- **Uncertainty Calibration**: Expected Calibration Error (ECE)
+
+---
+
+## 🔧 Tips
+- Set `use_quantum=False` in `config.py` to disable quantum layer and use a classical baseline.
+- Use GPU (`device="cuda"`) if available, else CPU fallback is automatic.
+- Adjust `batch_size`, `epochs`, and `proj_dim` for real datasets vs. synthetic toy data.
+- Extend adversarial module to include **PGD** or **text perturbations** for stronger robustness testing.
+
+---
+
+## 📜 License
+This project is released under the MIT License.
